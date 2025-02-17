@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Clock & Calendar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(45deg, #1a1a1a, #2d3436, #2c3e50);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .container {
+            position: relative;
+            padding: 3rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 15px 25px rgba(0,0,0,0.2);
+            z-index: 2;
+            min-width: 400px;
+        }
+
+        .clock {
+            font-size: 5rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+            display: flex;
+            gap: 20px;
+            position: relative;
+        }
+
+        .calendar {
+            display: none;
+            color: white;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            text-align: center;
+        }
+
+        .calendar-day {
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .calendar-day:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .calendar-day.current {
+            background: rgba(255, 255, 255, 0.2);
+            font-weight: bold;
+        }
+
+        .weekday-header {
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+        }
+
+        .time-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 120px;
+        }
+
+        .label {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 10px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .separator {
+            animation: blink 1s infinite;
+            align-self: flex-start;
+            margin-top: 10px;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .date {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 1.2rem;
+            white-space: nowrap;
+        }
+
+        .number {
+            position: relative;
+            transition: transform 0.5s;
+        }
+
+        .number:hover {
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+
+        .mode-switch {
+            position: absolute;
+            top: -50px;
+            right: 0;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 3;
+        }
+
+        .mode-switch:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: white;
+        }
+
+        /* Dark mode styles */
+        .dark-mode {
+            background: linear-gradient(45deg, #f5f7fa, #c3cfe2, #e0e0e0);
+        }
+
+        .dark-mode .container {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .dark-mode .clock,
+        .dark-mode .calendar {
+            color: #1a1a1a;
+            text-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        .dark-mode .label,
+        .dark-mode .weekday-header {
+            color: rgba(0,0,0,0.7);
+        }
+
+        .dark-mode .date {
+            color: #1a1a1a;
+        }
+
+        .dark-mode .mode-switch {
+            background: rgba(0, 0, 0, 0.1);
+            border-color: rgba(0, 0, 0, 0.5);
+            color: #1a1a1a;
+        }
+
+        .dark-mode .mode-switch:hover {
+            background: rgba(0, 0, 0, 0.2);
+            border-color: #1a1a1a;
+        }
+
+        .dark-mode .calendar-day:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .dark-mode .calendar-day.current {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        /* AM/PM styles */
+        .period {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-left: 10px;
+            align-self: flex-start;
+        }
+
+        .dark-mode .period {
+            color: rgba(0, 0, 0, 0.8);
+        }
+
+        /* Star styles */
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .clock {
+                font-size: 3rem;
+            }
+
+            .time-unit {
+                min-width: 80px;
+            }
+
+            .mode-switch {
+                top: -40px;
+                padding: 6px 12px;
+                font-size: 0.9rem;
+            }
+
+            .container {
+                min-width: 300px;
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="mode-switch">View Calendar</button>
+        <div class="clock">
+            <div class="time-unit">
+                <div class="number hours">12</div>
+                <div class="label">Hours</div>
+            </div>
+            <div class="separator">:</div>
+            <div class="time-unit">
+                <div class="number minutes">00</div>
+                <div class="label">Minutes</div>
+            </div>
+            <div class="separator">:</div>
+            <div class="time-unit">
+                <div class="number seconds">00</div>
+                <div class="label">Seconds</div>
+            </div>
+            <div class="period">AM</div>
+        </div>
+        <div class="calendar">
+            <div class="calendar-header">
+                <h2 id="current-month">February 2024</h2>
+            </div>
+            <div class="calendar-grid">
+                <div class="weekday-header">Sun</div>
+                <div class="weekday-header">Mon</div>
+                <div class="weekday-header">Tue</div>
+                <div class="weekday-header">Wed</div>
+                <div class="weekday-header">Thu</div>
+                <div class="weekday-header">Fri</div>
+                <div class="weekday-header">Sat</div>
+            </div>
+        </div>
+        <div class="date">Monday, January 1, 2024</div>
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            // Convert to 12-hour format
+            const period = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // Convert 0 to 12
+            hours = String(hours).padStart(2, '0');
+            
+            // Update time
+            document.querySelector('.hours').textContent = hours;
+            document.querySelector('.minutes').textContent = minutes;
+            document.querySelector('.seconds').textContent = seconds;
+            document.querySelector('.period').textContent = period;
+            
+            // Update date
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            document.querySelector('.date').textContent = now.toLocaleDateString('en-US', options);
+            
+            // Animate seconds
+            const secondsElement = document.querySelector('.seconds');
+            secondsElement.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                secondsElement.style.transform = 'scale(1)';
+            }, 100);
+        }
+
+        function generateCalendar() {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            
+            document.getElementById('current-month').textContent = 
+                new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            const calendarGrid = document.querySelector('.calendar-grid');
+            const existingDays = calendarGrid.querySelectorAll('.calendar-day');
+            existingDays.forEach(day => day.remove());
+
+            // Add empty spaces for days before the first day of the month
+            for (let i = 0; i < firstDay.getDay(); i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day';
+                calendarGrid.appendChild(emptyDay);
+            }
+
+            // Add days of the month
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                if (day === now.getDate()) {
+                    dayElement.className += ' current';
+                }
+                dayElement.textContent = day;
+                calendarGrid.appendChild(dayElement);
+            }
+        }
+
+        const modeSwitch = document.querySelector('.mode-switch');
+        const clockElement = document.querySelector('.clock');
+        const calendarElement = document.querySelector('.calendar');
+        let isCalendarView = false;
+
+        modeSwitch.addEventListener('click', () => {
+            isCalendarView = !isCalendarView;
+            if (isCalendarView) {
+                clockElement.style.display = 'none';
+                calendarElement.style.display = 'block';
+                modeSwitch.textContent = 'View Clock';
+                generateCalendar();
+            } else {
+                clockElement.style.display = 'flex';
+                calendarElement.style.display = 'none';
+                modeSwitch.textContent = 'View Calendar';
+            }
+        });
+
+        function createStar() {
+            const star = document.createElement('div');
+            star.className = 'star';
+            
+            const startX = Math.random() * window.innerWidth;
+            star.style.left = `${startX}px`;
+            star.style.top = '-2px';
+            
+            const duration = Math.random() * 3 + 2;
+            const delay = Math.random() * 2;
+            
+            star.style.animation = `
+                fall ${duration}s linear ${delay}s infinite
+            `;
+            
+            document.body.appendChild(star);
+            
+            setTimeout(() => {
+                star.remove();
+            }, (duration + delay) * 1000);
+        }
+
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fall {
+                0% {
+                    transform: translateY(-10px) translateX(0);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translateY(${window.innerHeight + 10}px) translateX(100px);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        setInterval(createStar, 100);
+        setInterval(updateClock, 1000);
+        updateClock();
+        generateCalendar();
+
+        document.addEventListener('mousemove', (e) => {
+            const { clientX, clientY } = e;
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            
+            const deltaX = (clientX - centerX) * 0.01;
+            const deltaY = (clientY - centerY) * 0.01;
+            
+            document.querySelector('.container').style.transform = 
+                `translate(${deltaX}px, ${deltaY}px)`;
+        });
+    </script>
+</body>
+</html>
